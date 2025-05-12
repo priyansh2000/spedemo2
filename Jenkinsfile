@@ -6,9 +6,9 @@ pipeline {
         DOCKER_IMAGE_FRONTEND = 'priyansh2000/frontend-app'
         DOCKER_IMAGE_BACKEND = 'priyansh2000/backend-app'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
-        KUBECONFIG_FILE = credentials('kube-config')
-        KUBECONFIG_PATH = "${WORKSPACE}/.kube/config"
-        MINIKUBE_CERTS_DIR = "${WORKSPACE}/.minikube"
+        // KUBECONFIG_FILE = credentials('kube-config')
+        // KUBECONFIG_PATH = "${WORKSPACE}/.kube/config"
+        // MINIKUBE_CERTS_DIR = "${WORKSPACE}/.minikube"
     }
 
     stages {
