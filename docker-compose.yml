@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: my-backend-container
+    ports:
+      - "8000:8000"
+    networks:
+      - spe-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: my-frontend-container
+    ports:
+      - "5000:5000"
+    depends_on:
+      - backend
+    environment:
+      - FLASK_APP=frontend.py
+      - FLASK_ENV=production
+    networks:
+      - spe-network
+
+networks:
+  spe-network:
+    driver: bridge

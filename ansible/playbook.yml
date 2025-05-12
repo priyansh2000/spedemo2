@@ -1,0 +1,92 @@
+---
+- name: Deploy LiverCareApp to Kubernetes using Ansible
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    frontend_image_tag: "{{ frontend_image_tag | default('latest') }}"
+    backend_image_tag: "{{ backend_image_tag | default('latest') }}"
+    kubeconfig_path: "{{ kubeconfig_path | default('./.kube/config') }}"
+    manifests_dir: "{{ playbook_dir }}/../k8s-manifests"
+    target_namespace: "mlops-project"
+    minikube_ip: "192.168.49.2"  # Set your Minikube IP here
+
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+
+  tasks:
+    - name: Verify kubeconfig file exists
+      stat:
+        path: "{{ kubeconfig_path }}"
+      register: kubeconfig_file
+
+    - name: Fail if kubeconfig is missing
+      fail:
+        msg: "Kubeconfig not found at {{ kubeconfig_path }}"
+      when: not kubeconfig_file.stat.exists
+
+    - name: Verify manifests directory exists
+      stat:
+        path: "{{ manifests_dir }}"
+      register: manifests_dir_stat
+
+    - name: Fail if manifests directory is missing
+      fail:
+        msg: "Kubernetes manifests directory not found at {{ manifests_dir }}"
+      when: not manifests_dir_stat.stat.exists
+
+    - name: Validate Kubernetes connection
+      command: "kubectl cluster-info"
+      register: cluster_info
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Check if namespace exists
+      command: "kubectl get namespace {{ target_namespace }} --ignore-not-found -o name"
+      register: namespace_check
+      changed_when: false
+
+    - name: Create namespace if missing
+      command: "kubectl create namespace {{ target_namespace }}"
+      when: namespace_check.stdout == ""
+      register: create_namespace
+      changed_when: create_namespace.rc == 0
+      ignore_errors: yes
+
+    - name: Apply Kubernetes Manifests
+      command: "kubectl apply -f {{ manifests_dir }} -n {{ target_namespace }}"
+      register: apply_result
+
+    - name: Update Frontend Image
+      command: "kubectl set image deployment/frontend-deployment frontend-container=prabhav49/frontend-app:{{ frontend_image_tag }} -n {{ target_namespace }}"
+      register: update_frontend
+      when: frontend_image_tag != 'latest'
+
+    - name: Update Backend Image
+      command: "kubectl set image deployment/backend-deployment backend-container=prabhav49/backend-app:{{ backend_image_tag }} -n {{ target_namespace }}"
+      register: update_backend
+      when: backend_image_tag != 'latest'
+
+    - name: Rollout Restart Frontend
+      command: "kubectl rollout restart deployment/frontend-deployment -n {{ target_namespace }}"
+      when: frontend_image_tag == 'latest'
+
+    - name: Rollout Restart Backend
+      command: "kubectl rollout restart deployment/backend-deployment -n {{ target_namespace }}"
+      when: backend_image_tag == 'latest'
+
+    - name: Get frontend NodePort
+      command: "kubectl get svc frontend-service -n {{ target_namespace }} -o jsonpath='{.spec.ports[0].nodePort}'"
+      register: frontend_port
+      changed_when: false
+
+    - name: Show access information
+      debug:
+        msg: |
+          Deployment successful!
+          Frontend available at: http://{{ minikube_ip }}:{{ frontend_port.stdout }}
+          Or use port-forwarding: kubectl port-forward svc/frontend-service 8080:5000 -n {{ target_namespace }}
+          Frontend Image Tag: {{ frontend_image_tag }}
+          Backend Image Tag: {{ backend_image_tag }}
+      when: apply_result.rc == 0
