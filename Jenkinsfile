@@ -94,11 +94,11 @@ pipeline {
                         sh "cp '$CLIENT_KEY' ${MINIKUBE_CERTS_DIR}/profiles/minikube/client.key"
                         sh "cp '$CA_CRT' ${MINIKUBE_CERTS_DIR}/ca.crt"
 
-                        sh "cp '$KUBECONFIG_FILE' ${KUBECONFIG_PATH}"
+                        sh "cp '${KUBECONFIG_FILE}' ${KUBECONFIG_PATH}"
                         sh """
-                        sed -i 's|/home/prabhav/.minikube/profiles/minikube/client.crt|${MINIKUBE_CERTS_DIR}/profiles/minikube/client.crt|g' ${KUBECONFIG_PATH}
-                        sed -i 's|/home/prabhav/.minikube/profiles/minikube/client.key|${MINIKUBE_CERTS_DIR}/profiles/minikube/client.key|g' ${KUBECONFIG_PATH}
-                        sed -i 's|/home/prabhav/.minikube/ca.crt|${MINIKUBE_CERTS_DIR}/ca.crt|g' ${KUBECONFIG_PATH}
+                        sed -i 's|/home/priyansh/.minikube/profiles/minikube/client.crt|${MINIKUBE_CERTS_DIR}/profiles/minikube/client.crt|g' ${KUBECONFIG_PATH}
+                        sed -i 's|/home/priyansh/.minikube/profiles/minikube/client.key|${MINIKUBE_CERTS_DIR}/profiles/minikube/client.key|g' ${KUBECONFIG_PATH}
+                        sed -i 's|/home/priyansh/.minikube/ca.crt|${MINIKUBE_CERTS_DIR}/ca.crt|g' ${KUBECONFIG_PATH}
                         """
 
                         sh "chmod 644 ${MINIKUBE_CERTS_DIR}/profiles/minikube/client.crt"
