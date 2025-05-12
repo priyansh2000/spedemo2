@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        GIT_CREDENTIALS = 'github-cred'
-        DOCKER_IMAGE_FRONTEND = 'prabhav49/frontend-app'
-        DOCKER_IMAGE_BACKEND = 'prabhav49/backend-app'
+        GIT_CREDENTIALS = 'google-gmail'
+        DOCKER_IMAGE_FRONTEND = 'priyansh2000/frontend-app'
+        DOCKER_IMAGE_BACKEND = 'priyansh2000/backend-app'
         DOCKER_TAG = "${env.BUILD_NUMBER}"  // Unique tag per build
         KUBECONFIG_FILE = credentials('kube-config')
         KUBECONFIG_PATH = "${WORKSPACE}/.kube/config"
@@ -15,8 +15,8 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 git(
-                    url: 'https://github.com/Prabhav49/LiverCareApp.git',
-                    credentialsId: 'github-cred',
+                    url: 'https://github.com/priyansh2000/spedemo2.git',
+                    credentialsId: 'google-gmail',
                     poll: true  // Enable SCM polling
                 )
             }
@@ -80,7 +80,7 @@ pipeline {
         stage('Push Docker Images') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'docker-hub-credentials', 
+                    credentialsId: 'DockerHubCred', 
                     usernameVariable: 'DOCKER_USER', 
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
