@@ -127,7 +127,7 @@ pipeline {
 
     post {
         always {
-            node {
+            script {
                 cleanWs()
             }
         }
@@ -148,4 +148,5 @@ pipeline {
             )
         }
     }
+
 }
