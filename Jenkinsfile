@@ -149,6 +149,11 @@ pipeline {
     }
 
     post {
+        always {
+            node {
+                cleanWs()
+            }
+        }
         success {
             emailext(
                 to: 'iam49smith@gmail.com',
