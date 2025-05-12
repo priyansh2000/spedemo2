@@ -126,14 +126,9 @@ pipeline {
     }
 
     post {
-        always {
-            node {
-                cleanWs()
-            }
-        }
         success {
             emailext(
-                to: 'iam49smith@gmail.com',
+                to: 'raipriyansh20@gmail.com',
                 subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """<p>The build and deployment were <b>successful!</b></p>
                          <p>Check the build details: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>"""
@@ -141,13 +136,19 @@ pipeline {
         }
         failure {
             emailext(
-                to: 'iam49smith@gmail.com',
+                to: 'raipriyansh20@gmail.com',
                 subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """<p>The build or deployment <b>failed!</b></p>
                          <p>Check the build details: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>"""
             )
         }
+        always {
+            script {
+                cleanWs()
+            }
+        }
     }
+
 
 
 }
