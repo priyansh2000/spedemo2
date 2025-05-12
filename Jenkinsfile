@@ -15,6 +15,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 git(
+                    branch: 'main',
                     url: 'https://github.com/priyansh2000/spedemo2.git',
                     credentialsId: 'google-gmail',
                     poll: true
