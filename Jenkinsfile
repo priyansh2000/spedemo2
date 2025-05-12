@@ -5,7 +5,7 @@ pipeline {
         GIT_CREDENTIALS = 'google-gmail'
         DOCKER_IMAGE_FRONTEND = 'priyansh2000/frontend-app'
         DOCKER_IMAGE_BACKEND = 'priyansh2000/backend-app'
-        DOCKER_TAG = "${env.BUILD_NUMBER}"  // Unique tag per build
+        DOCKER_TAG = "${env.BUILD_NUMBER}"
         KUBECONFIG_FILE = credentials('kube-config')
         KUBECONFIG_PATH = "${WORKSPACE}/.kube/config"
         MINIKUBE_CERTS_DIR = "${WORKSPACE}/.minikube"
@@ -17,7 +17,7 @@ pipeline {
                 git(
                     url: 'https://github.com/priyansh2000/spedemo2.git',
                     credentialsId: 'google-gmail',
-                    poll: true  // Enable SCM polling
+                    poll: true
                 )
             }
         }
@@ -36,27 +36,9 @@ pipeline {
             }
         }
 
-        // stage('Run Tests') {
-        //     steps {
-        //         script {
-        //             sh '''
-        //             . venv-backend/bin/activate && 
-        //             export PYTHONPATH=$PYTHONPATH:$PWD/backend/src && 
-        //             pytest tests/backend/ --maxfail=1 --disable-warnings -q
-        //             '''
-        //             sh '''
-        //             . venv-frontend/bin/activate && 
-        //             export PYTHONPATH=$PYTHONPATH:$PWD/frontend && 
-        //             pytest tests/frontend/ --maxfail=1 --disable-warnings -q
-        //             '''
-        //         }
-        //     }
-        // }
-
         stage('Build Docker Images') {
             steps {
                 script {
-                    // Force clean builds without cache and use build args
                     sh """
                     docker build \
                         --no-cache \
@@ -80,8 +62,8 @@ pipeline {
         stage('Push Docker Images') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'DockerHubCred', 
-                    usernameVariable: 'DOCKER_USER', 
+                    credentialsId: 'DockerHubCred',
+                    usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     script {
@@ -98,42 +80,37 @@ pipeline {
         stage('Prepare Kubeconfig and Certificates') {
             steps {
                 script {
-                    // Create directory structure
                     sh "mkdir -p ${MINIKUBE_CERTS_DIR}/profiles/minikube"
                     sh "mkdir -p ${WORKSPACE}/.kube"
 
-                    // Copy and set up certificates using credentials
                     withCredentials([
                         file(credentialsId: 'minikube-client-cert', variable: 'CLIENT_CERT'),
                         file(credentialsId: 'minikube-client-key', variable: 'CLIENT_KEY'),
                         file(credentialsId: 'minikube-ca', variable: 'CA_CRT'),
                         file(credentialsId: 'kube-config', variable: 'KUBECONFIG_FILE')
                     ]) {
-                        // Copy certificates to workspace
                         sh "cp '$CLIENT_CERT' ${MINIKUBE_CERTS_DIR}/profiles/minikube/client.crt"
                         sh "cp '$CLIENT_KEY' ${MINIKUBE_CERTS_DIR}/profiles/minikube/client.key"
                         sh "cp '$CA_CRT' ${MINIKUBE_CERTS_DIR}/ca.crt"
 
-                        // Copy and modify kubeconfig
                         sh "cp '$KUBECONFIG_FILE' ${KUBECONFIG_PATH}"
                         sh """
                         sed -i 's|/home/prabhav/.minikube/profiles/minikube/client.crt|${MINIKUBE_CERTS_DIR}/profiles/minikube/client.crt|g' ${KUBECONFIG_PATH}
                         sed -i 's|/home/prabhav/.minikube/profiles/minikube/client.key|${MINIKUBE_CERTS_DIR}/profiles/minikube/client.key|g' ${KUBECONFIG_PATH}
                         sed -i 's|/home/prabhav/.minikube/ca.crt|${MINIKUBE_CERTS_DIR}/ca.crt|g' ${KUBECONFIG_PATH}
                         """
-                        
-                        // Set secure permissions
+
                         sh "chmod 644 ${MINIKUBE_CERTS_DIR}/profiles/minikube/client.crt"
                         sh "chmod 600 ${MINIKUBE_CERTS_DIR}/profiles/minikube/client.key"
                         sh "chmod 644 ${MINIKUBE_CERTS_DIR}/ca.crt"
                         sh "chmod 600 ${KUBECONFIG_PATH}"
                     }
 
-                    // Verify Kubernetes access
                     sh "KUBECONFIG=${KUBECONFIG_PATH} kubectl cluster-info"
                 }
             }
         }
+
         stage('Deploy using Ansible') {
             steps {
                 script {
