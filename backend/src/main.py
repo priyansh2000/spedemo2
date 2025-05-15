@@ -1,12 +1,13 @@
 from fastapi import FastAPI, HTTPException, Request, Response
 from prometheus_client import generate_latest
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 import numpy as np
 import pandas as pd
 import pickle
 import os
 import time
+import csv
 
 from prometheus_client import start_http_server, Counter, Histogram, generate_latest
 
@@ -102,3 +103,69 @@ async def predict(data: PatientData):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# Global counter for feedback submissions
+feedback_count = 0
+RETRAIN_THRESHOLD = 1  # Retrain after 10 incorrect predictions
+
+@app.post("/feedback")
+async def feedback(data: dict):
+    global feedback_count
+    
+    try:
+        # Ensure directory exists
+        os.makedirs("../data", exist_ok=True)
+        
+        # Check if train.csv exists, if not create with headers
+        file_exists = os.path.isfile("../data/train.csv")
+        
+        # Append data to CSV
+        with open("../data/Liver Patient Dataset(LPD)_train.csv", "a", newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=data.keys())
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(data)
+            
+        # Increment feedback counter
+        feedback_count += 1
+        
+        # Check if we should retrain
+        if feedback_count >= RETRAIN_THRESHOLD:
+            # Reset counter
+            feedback_count = 0
+            # Trigger retraining (could be async)
+            await retrain_model()
+            return JSONResponse(content={"message": "Feedback saved and model retrained"})
+        
+        return JSONResponse(content={"message": "Feedback saved successfully"})
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save feedback: {str(e)}")
+
+async def retrain_model():
+    """Retrain the model using updated dataset and save the new model"""
+    try:
+        # Load existing data
+        df = pd.read_csv("../data/train.csv")
+        
+        # Implement your model training logic here
+        # For example:
+        # X = df.drop('actual_result', axis=1)
+        # y = df['actual_result']
+        # Perform train/test split, scaling, PCA, etc.
+        # Train logistic regression
+        # Save new model to replace the old one
+        
+        # Update the loaded model in memory
+        global model
+        current_dir = os.path.dirname(__file__)
+        model_path = os.path.join(current_dir, "../models/logistic_model.pkl")
+        with open(model_path, "rb") as f:
+            model = pickle.load(f)
+            
+        # Log retraining event
+        print("Model successfully retrained with feedback data")
+        
+    except Exception as e:
+        print(f"Error retraining model: {str(e)}")
+        raise

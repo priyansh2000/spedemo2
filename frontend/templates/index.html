@@ -248,6 +248,37 @@
                 </div>
             </div>
         </div>
+
+        <div class="feedback-section">
+            <h3>Was this prediction correct?</h3>
+            <form action="/submit-feedback" method="POST">
+                <!-- Include all the original input data as hidden fields -->
+                <input type="hidden" name="age" value="{{ request.form.age }}">
+                <input type="hidden" name="gender" value="{{ request.form.gender }}">
+                <input type="hidden" name="total_bilirubin" value="{{ request.form.total_bilirubin }}">
+                <input type="hidden" name="direct_bilirubin" value="{{ request.form.direct_bilirubin }}">
+                <input type="hidden" name="alkaline_phosphotase" value="{{ request.form.alkaline_phosphotase }}">
+                <input type="hidden" name="alanine_aminotransferase" value="{{ request.form.alanine_aminotransferase }}">
+                <input type="hidden" name="aspartate_aminotransferase" value="{{ request.form.aspartate_aminotransferase }}">
+                <input type="hidden" name="total_proteins" value="{{ request.form.total_proteins }}">
+                <input type="hidden" name="albumin" value="{{ request.form.albumin }}">
+                <input type="hidden" name="albumin_globulin_ratio" value="{{ request.form.albumin_globulin_ratio }}">
+                
+                <!-- Add the actual result field -->
+                <div class="form-group">
+                    <label for="actual_result">Actual Result (if known):</label>
+                    <select name="actual_result" id="actual_result" required class="form-select mb-3">
+                        <option value="0">Negative (0)</option>
+                        <option value="1">Positive (1)</option>
+                    </select>
+                </div>
+                
+                <div class="mt-3">
+                    <button type="submit" name="correct" value="true" class="btn btn-success me-2">Yes, it was correct</button>
+                    <button type="submit" name="correct" value="false" class="btn btn-danger">No, it was incorrect</button>
+                </div>
+            </form>
+        </div>
         {% endif %}
     </div>
 
