@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:8001']  # This is still correct - internal container port
+
+  - job_name: 'frontend'
+    metrics_path: /metrics
+    static_configs: 
+      - targets: ['frontend:8001']  # This is still correct - internal container port
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

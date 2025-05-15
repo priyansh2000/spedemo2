@@ -6,7 +6,8 @@ services:
       context: ./backend
     container_name: my-backend-container
     ports:
-      - '8000:8000'
+      - '8000:8000'  # Main app port
+      - '9001:8001'  # Changed from 8001:8001 to avoid conflict
     networks:
       - spe-network
 
@@ -15,7 +16,8 @@ services:
       context: ./frontend
     container_name: my-frontend-container
     ports:
-      - '5000:5000'
+      - '5000:5000'   # Main app port 
+      - '9002:8001'   # Changed from 8002:8001
     depends_on:
       - backend
     environment:
@@ -23,6 +25,36 @@ services:
     networks:
       - spe-network
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - spe-network
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - spe-network
+
 networks:
   spe-network:
     driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:

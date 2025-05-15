@@ -2,9 +2,17 @@ from flask import Flask, render_template, request, jsonify, flash
 import requests
 from wtforms import Form, FloatField, SelectField, validators
 import os
+from prometheus_client import Counter
 
 app = Flask(__name__)
-app.secret_key = 'liver_disease_prediction_app'  # Required for flash messages
+app.secret_key = 'liver_disease_prediction_app'
+
+# Prometheus frontend request counter
+FRONTEND_REQUESTS = Counter(
+    'frontend_requests_total',
+    'Total frontend requests',
+    ['endpoint']
+)
 
 class PredictionForm(Form):
     age = FloatField('Age', [
@@ -48,20 +56,17 @@ class PredictionForm(Form):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    FRONTEND_REQUESTS.labels(endpoint='/').inc()
     form = PredictionForm(request.form)
     prediction_result = None
     error_message = None
     if request.method == 'POST':
         if form.validate():
             try:
-                # Prepare data
                 payload = { field: float(form._fields[field].data) if field != 'gender' else int(form.gender.data)
                             for field in form._fields }
-
-                # Use correct service name and fallback
                 backend_url = os.getenv('BACKEND_URL', 'http://backend:8000')
                 response = requests.post(f"{backend_url}/predict", json=payload)
-
                 if response.ok:
                     prediction_result = response.json()
                 else:
@@ -74,6 +79,7 @@ def index():
 
 @app.route('/api/predict', methods=['POST'])
 def api_predict():
+    FRONTEND_REQUESTS.labels(endpoint='/api/predict').inc()
     data = request.json or {}
     required_fields = ['age', 'gender', 'total_bilirubin', 'direct_bilirubin',
                        'alkaline_phosphotase', 'alanine_aminotransferase',
@@ -88,7 +94,7 @@ def api_predict():
                     return jsonify({'error': f'{f} cannot be negative'}), 400
             except:
                 return jsonify({'error': f'{f} must be a valid number'}), 400
-    if data['gender'] not in [0,1,'0','1']:
+    if data['gender'] not in [0, 1, '0', '1']:
         return jsonify({'error': 'Gender must be 0 or 1'}), 400
     data['gender'] = int(data['gender'])
     backend_url = os.getenv('BACKEND_URL', 'http://backend:8000')
